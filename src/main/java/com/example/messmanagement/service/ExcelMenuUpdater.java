@@ -5,11 +5,13 @@ import com.example.messmanagement.repository.MenuRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.time.LocalDate;
 
 @Service
@@ -20,15 +22,8 @@ public class ExcelMenuUpdater {
 
     @Scheduled(fixedRate = 86400000) // Runs daily
     public void updateMenuFromExcel() {
-        String filePath = "resources/20-Jan_to_2-Feb_menu.xlsx";
-        File file = new File(filePath);
-
-        if (!file.exists()) {
-            System.err.println("Excel file not found at: " + file.getAbsolutePath());
-            return;
-        }
-
-        try (FileInputStream fis = new FileInputStream(file); Workbook workbook = new XSSFWorkbook(fis)) {
+        try (InputStream fis = new ClassPathResource("20-Jan_to_2-Feb_menu.xlsx").getInputStream();
+            Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheetAt(0);
             if (sheet == null) {
                 System.err.println("Sheet not found in the Excel file.");
