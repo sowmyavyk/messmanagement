@@ -21,7 +21,7 @@ public class ExcelMenuUpdater {
 
     @Scheduled(fixedRate = 86400000) // Runs daily
     public void updateMenuFromExcel() throws IOException {
-        File file = new File("messmanagement/src/main/resources/20-Jan_to_2-Feb_menu.xlsx");
+        File file = new File("src/main/resources/20-Jan_to_2-Feb_menu.xlsx");
         if (!file.exists()) {
             System.err.println("Excel file not found: " + file.getAbsolutePath());
             return;
