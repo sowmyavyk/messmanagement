@@ -20,7 +20,7 @@ public class ExcelMenuUpdater {
 
     @Scheduled(fixedRate = 86400000) // Runs daily
     public void updateMenuFromExcel() {
-        String filePath = "src/main/resources/20-Jan_to_2-Feb_menu.xlsx";
+        String filePath = "resources/20-Jan_to_2-Feb_menu.xlsx";
         File file = new File(filePath);
 
         if (!file.exists()) {
