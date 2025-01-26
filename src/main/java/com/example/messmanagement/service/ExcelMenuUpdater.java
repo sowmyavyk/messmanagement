@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.time.LocalDate;
 
 @Service
@@ -20,10 +19,12 @@ public class ExcelMenuUpdater {
     private MenuRepository menuRepository;
 
     @Scheduled(fixedRate = 86400000) // Runs daily
-    public void updateMenuFromExcel() throws IOException {
-        File file = new File("src/main/resources/20-Jan_to_2-Feb_menu.xlsx");
+    public void updateMenuFromExcel() {
+        String filePath = "src/main/resources/20-Jan_to_2-Feb_menu.xlsx";
+        File file = new File(filePath);
+
         if (!file.exists()) {
-            System.err.println("Excel file not found: " + file.getAbsolutePath());
+            System.err.println("Excel file not found at: " + file.getAbsolutePath());
             return;
         }
 
@@ -83,14 +84,15 @@ public class ExcelMenuUpdater {
                             rowIndex++;
                         }
 
-                        saveMenu(menuRepository, dayOfWeek, firstDate, mealType, menuItems.toString());
-                        saveMenu(menuRepository, dayOfWeek, secondDate, mealType, menuItems.toString());
+                        saveMenu(dayOfWeek, firstDate, mealType, menuItems.toString());
+                        saveMenu(dayOfWeek, secondDate, mealType, menuItems.toString());
                     } else {
                         rowIndex++;
                     }
                 }
             }
         } catch (Exception e) {
+            System.err.println("Error while processing Excel file: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -112,14 +114,14 @@ public class ExcelMenuUpdater {
                cellValue.equalsIgnoreCase("DINNER");
     }
 
-    private void saveMenu(MenuRepository repository, String day, LocalDate date, String mealType, String menuItems) {
+    private void saveMenu(String day, LocalDate date, String mealType, String menuItems) {
         try {
             Menu menu = new Menu();
             menu.setDayOfWeek(day);
             menu.setDate(date);
             menu.setMealType(mealType);
             menu.setMenuItems(menuItems);
-            repository.save(menu);
+            menuRepository.save(menu);
             System.out.println("Saved menu: " + menu);
         } catch (Exception e) {
             System.err.println("Failed to save menu: " + e.getMessage());
