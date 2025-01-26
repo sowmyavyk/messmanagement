@@ -7,6 +7,7 @@ RUN mvn clean package -DskipTests
 # Stage 2: Run
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /app/target/profile-0.0.1-SNAPSHOT.jar app.jar
+# Copy the correct JAR file from the build stage
+COPY --from=build /app/target/messmanagement-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]
