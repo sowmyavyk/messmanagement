@@ -22,7 +22,7 @@ public class ExcelMenuUpdater {
 
     @Scheduled(fixedRate = 86400000) // Runs daily
     public void updateMenuFromExcel() {
-        try (InputStream fis = new ClassPathResource("/resources/20-Jan_to_2-Feb_menu.xlsx").getInputStream();
+        try (InputStream fis = new ClassPathResource("https://docs.google.com/spreadsheets/d/1tWOC3p04ZXOlTMQQGMz63AdidgOFzHUMogFwHvm8Oko/edit?gid=381941981#gid=381941981").getInputStream();
             Workbook workbook = new XSSFWorkbook(fis)) {
             Sheet sheet = workbook.getSheetAt(0);
             if (sheet == null) {
