@@ -13,7 +13,11 @@ public class MenuService {
     @Autowired
     private MenuRepository menuRepository;
 
-    public List<Menu> getDailyMenu(String dayOfWeek, LocalDate date) {
-        return menuRepository.findByDayOfWeekAndDate(dayOfWeek, date);
+    public List<Menu> getMenuByDate(LocalDate date) {
+        // Log the date being used for the query
+        System.out.println("Fetching menu for date: " + date);
+
+        // Query based only on today's date
+        return menuRepository.findByDate(date);
     }
 }

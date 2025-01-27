@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long> {
-    List<Menu> findByDayOfWeekAndDate(String dayOfWeek, LocalDate date);
+    List<Menu> findByDate(LocalDate date);
 }
