@@ -5,12 +5,13 @@ import com.example.messmanagement.repository.MenuRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileInputStream;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+
 import java.io.InputStream;
 import java.time.LocalDate;
 
@@ -20,26 +21,34 @@ public class ExcelMenuUpdater {
     @Autowired
     private MenuRepository menuRepository;
 
-    @Scheduled(fixedRate = 86400000) // Runs daily
-    public void updateMenuFromExcel() {
-        try (InputStream fis = new ClassPathResource("src/main/resources/20-Jan_to_2-Feb_menu.xlsx").getInputStream();
-            Workbook workbook = new XSSFWorkbook(fis)) {
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Transactional
+    public void processExcelFile(MultipartFile file) {
+        try (InputStream fis = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(fis)) {
+
+            // Ensure the `menu` table exists in the database
+            createMenuTableIfNotExists();
+
+            // Clear existing rows in the `menu` table
+            menuRepository.deleteAll();
+
+            // Process the uploaded Excel file
             Sheet sheet = workbook.getSheetAt(0);
             if (sheet == null) {
-                System.err.println("Sheet not found in the Excel file.");
-                return;
+                throw new IllegalArgumentException("No sheet found in the Excel file.");
             }
 
             Row dateRow1 = sheet.getRow(1); // First row with dates
             Row dateRow2 = sheet.getRow(2); // Second row with dates
 
             if (dateRow1 == null || dateRow2 == null) {
-                System.err.println("Date rows are missing.");
-                return;
+                throw new IllegalArgumentException("Date rows are missing in the Excel file.");
             }
 
             int totalColumns = dateRow1.getLastCellNum(); // Number of columns (days)
-            System.out.println("Total Columns (Days): " + totalColumns);
 
             for (int col = 0; col < totalColumns; col++) {
                 String dayOfWeek = sheet.getRow(0).getCell(col).getStringCellValue();
@@ -47,8 +56,7 @@ public class ExcelMenuUpdater {
                 LocalDate secondDate = parseDate(dateRow2.getCell(col));
 
                 if (firstDate == null || secondDate == null) {
-                    System.err.println("Invalid date at column: " + col);
-                    continue;
+                    throw new IllegalArgumentException("Invalid date format at column: " + col);
                 }
 
                 int rowIndex = 3; // Start processing menu items from Row 3
@@ -87,8 +95,7 @@ public class ExcelMenuUpdater {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error while processing Excel file: " + e.getMessage());
-            e.printStackTrace();
+            throw new RuntimeException("Error processing Excel file: " + e.getMessage(), e);
         }
     }
 
@@ -97,8 +104,7 @@ public class ExcelMenuUpdater {
             if (cell == null) return null;
             return cell.getLocalDateTimeCellValue().toLocalDate();
         } catch (Exception e) {
-            System.err.println("Date parsing failed for cell: " + cell);
-            return null;
+            throw new RuntimeException("Date parsing failed for cell: " + cell);
         }
     }
 
@@ -110,16 +116,24 @@ public class ExcelMenuUpdater {
     }
 
     private void saveMenu(String day, LocalDate date, String mealType, String menuItems) {
-        try {
-            Menu menu = new Menu();
-            menu.setDayOfWeek(day);
-            menu.setDate(date);
-            menu.setMealType(mealType);
-            menu.setMenuItems(menuItems);
-            menuRepository.save(menu);
-            System.out.println("Saved menu: " + menu);
-        } catch (Exception e) {
-            System.err.println("Failed to save menu: " + e.getMessage());
-        }
+        Menu menu = new Menu();
+        menu.setDayOfWeek(day);
+        menu.setDate(date);
+        menu.setMealType(mealType);
+        menu.setMenuItems(menuItems);
+        menuRepository.save(menu);
+    }
+
+    private void createMenuTableIfNotExists() {
+        String createTableQuery = """
+            CREATE TABLE IF NOT EXISTS menu (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                day_of_week VARCHAR(255) NOT NULL,
+                meal_type VARCHAR(255) NOT NULL,
+                menu_items VARCHAR(2000),
+                date DATE NOT NULL
+            )
+        """;
+        entityManager.createNativeQuery(createTableQuery).executeUpdate();
     }
 }
